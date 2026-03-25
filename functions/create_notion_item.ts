@@ -1,7 +1,7 @@
 import { DefineFunction, Schema, SlackFunction } from "deno-slack-sdk/mod.ts";
 import { NotionClient } from "./utils/notion_client.ts";
 import { UserMapper } from "./utils/user_mapper.ts";
-import { NotionCreatePageRequest } from "../types/notion.ts";
+import { NotionBlock, NotionCreatePageRequest } from "../types/notion.ts";
 import {
   collectFieldsFromInputs,
   convertToNotionProperties,
@@ -123,6 +123,10 @@ export const CreateNotionItemFunction = DefineFunction({
         type: Schema.slack.types.user_id,
         description: "User ID for user field 3",
       },
+      body_content: {
+        type: Schema.types.string,
+        description: "Page body content (plain text, added as paragraph blocks)",
+      },
     },
     required: ["database_id"],
   },
@@ -216,10 +220,27 @@ export default SlackFunction(
         };
       }
 
+      // 本文ブロックを生成（改行で段落を分割）
+      const children: NotionBlock[] = [];
+      const bodyContent = inputs.body_content as string | undefined;
+      if (bodyContent) {
+        const paragraphs = bodyContent.split("\n");
+        for (const paragraph of paragraphs) {
+          children.push({
+            object: "block",
+            type: "paragraph",
+            paragraph: {
+              rich_text: [{ text: { content: paragraph } }],
+            },
+          });
+        }
+      }
+
       // Create the Notion page
       const createRequest: NotionCreatePageRequest = {
         parent: { database_id: databaseId },
         properties: notionProperties,
+        ...(children.length > 0 ? { children } : {}),
       };
 
       const createdPage = await notionClient.createPage(createRequest);

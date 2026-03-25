@@ -32,11 +32,20 @@ export interface NotionPageProperty {
   files?: Array<{ name: string; external?: { url: string } }>;
 }
 
+export interface NotionBlock {
+  object: "block";
+  type: "paragraph";
+  paragraph: {
+    rich_text: Array<{ text: { content: string } }>;
+  };
+}
+
 export interface NotionCreatePageRequest {
   parent: {
     database_id: string;
   };
   properties: Record<string, NotionPageProperty>;
+  children?: NotionBlock[];
 }
 
 export interface NotionCreatePageResponse {
