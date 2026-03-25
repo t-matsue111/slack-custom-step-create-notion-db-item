@@ -220,7 +220,8 @@ export default SlackFunction(
         };
       }
 
-      // 本文ブロックを生成（改行で段落を分割）
+      // 本文ブロックを生成（改行で段落を分割、rich_textは2000文字制限）
+      const RICH_TEXT_MAX_LENGTH = 2000;
       const children: NotionBlock[] = [];
       const bodyContent = inputs.body_content as string | undefined;
       if (bodyContent) {
@@ -230,7 +231,7 @@ export default SlackFunction(
             object: "block",
             type: "paragraph",
             paragraph: {
-              rich_text: [{ text: { content: paragraph } }],
+              rich_text: [{ text: { content: paragraph.slice(0, RICH_TEXT_MAX_LENGTH) } }],
             },
           });
         }
